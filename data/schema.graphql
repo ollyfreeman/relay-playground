@@ -1,0 +1,49 @@
+input changeNameInput {
+  userId: String!
+  name: String!
+  clientMutationId: String!
+}
+
+type changeNamePayload {
+  user: User
+  clientMutationId: String!
+}
+
+interface Node {
+  id: ID!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+type RootMutation {
+  changeName(input: changeNameInput!): changeNamePayload
+}
+
+type RootQuery {
+  node(id: ID!): Node
+  user(userId: String!): User
+}
+
+type User implements Node {
+  id: ID!
+  userId: String
+  name: String
+  hobby: String
+  friends(after: String, first: Int, before: String, last: Int): UserConnection
+  friend(friendId: String!): User
+}
+
+type UserConnection {
+  pageInfo: PageInfo!
+  edges: [UserEdge]
+}
+
+type UserEdge {
+  node: User
+  cursor: String!
+}
