@@ -53,4 +53,4 @@ localhost:3000/graphql
 ```
 There is one root-level query (`user`) and one root-level mutation (`changeName`).
 
-In the master branch, some of the transparency of the GraphQL server is obscured by the use of the the `graphql-relay-js` library. Reading the [GraphQL Relay specification](https://facebook.github.io/relay/docs/graphql-relay-specification.html#content) in conjunction with the [source](https://github.com/graphql/graphql-relay-js/tree/master/src) of `graphql-relay-js` will shed light on some of these library functions. However, I plan to add a new branch that includes my own implementations of these in such cases that it makes it easier to understand.
+In the master branch, some of the transparency of the GraphQL server is obscured by the use of the the `graphql-relay-js` library. Reading the [GraphQL Relay specification](https://facebook.github.io/relay/docs/graphql-relay-specification.html#content) in conjunction with the [source](https://github.com/graphql/graphql-relay-js/tree/master/src) of `graphql-relay-js` will shed light on some of these library functions. Alternatively, you can see a more transparent implentation on the `manual-relay` branch.

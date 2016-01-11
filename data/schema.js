@@ -3,6 +3,8 @@ import graphqlHTTP from 'express-graphql';
 import express from 'express';
 import * as relay from 'graphql-relay'; // importing like this so I can see in the code which functions come from which import
 
+import * as relayHelpers from './relay'; // my re-implentations of some of the graphql-relay-js helpers
+
 import {
   User,
   getUser,
@@ -12,33 +14,15 @@ import {
   setUserName,
 } from './database';
 
-// Get the "node" interface and field from the Relay library.
-// The first method defines the way we resolve the global id to its object.
-// The second method defines the way we resolve an object to its GraphQL type.
-
-var { nodeInterface, nodeField } = relay.nodeDefinitions(
-  (globalId) => {
-    var { type, id } = relay.fromGlobalId(globalId);
-    if (type === 'User') {
-      return getUser(id);
-    } else {
-      return null;
-    }
-  },
-  (obj) => {
-    if(obj instanceof User) {
-      return userType;
-    } else {
-      return null;
-    }
-  }
-);
-
 var userType = new graphql.GraphQLObjectType({
   name: 'User',
   description: 'A user in our simple example system',
   fields: () => ({
-    id: relay.globalIdField('User', user => user.userId), // the 'globalId' of the user
+    id: {
+      description: 'The id of the user',
+      type: new graphql.GraphQLNonNull(graphql.GraphQLString),
+      resolve: user => relayHelpers.toGlobalId('User', user.userId)
+    },
     userId: {
       description: 'The userId of the user',
       type: graphql.GraphQLString,
@@ -76,7 +60,7 @@ var userType = new graphql.GraphQLObjectType({
       },
     }
   }),
-  interfaces: [nodeInterface]
+  interfaces: [relayHelpers.nodeInterface]
 });
 
 var { connectionType: userConnection } = relay.connectionDefinitions({name: 'User', nodeType: userType});
@@ -84,7 +68,27 @@ var { connectionType: userConnection } = relay.connectionDefinitions({name: 'Use
 var queryType = new graphql.GraphQLObjectType({
   name: 'RootQuery',
   fields: {
-    node: nodeField,
+    // Note that this query definition, and the definition of nodeInterface can be done using
+    // the 'nodeDefinitions' function in 'graphyql-relay-js' instead of my longer-winded but
+    // hopefully more transparent implementations
+    node: {
+      type: relayHelpers.nodeInterface,
+      description: 'Get an object by its globalId',
+      args: {
+        id: {
+          description: 'The global id of the object',
+          type: new graphql.GraphQLNonNull(graphql.GraphQLString),
+        }
+      },
+      resolve: (_, args) => {
+        var { type, id } = relayHelpers.fromGlobalId(args.id);
+        if (type === 'User') {
+          return getUser(id);
+        } else {
+          return null;
+        }
+      }
+    },
     user: {
       type: userType,
       description: 'Get the user with the given id',
@@ -95,7 +99,9 @@ var queryType = new graphql.GraphQLObjectType({
         }
       },
       resolve: (_, args) => {
-        return getUser(args.userId);
+        var user = getUser(args.userId);
+        user.id = relayHelpers.toGlobalId('User', user.userId);
+        return user;
       }
     }
   }
